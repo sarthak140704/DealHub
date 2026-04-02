@@ -1,0 +1,136 @@
+// DealHub — Prisma Schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+enum DealStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  REMOVED
+  REJECTED
+  DELETED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  username     String         @unique
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(CUSTOMER)
+  preferences  Json?
+  createdAt    DateTime       @default(now())
+
+  vendor       Vendor?
+  bookmarks    Bookmark[]
+  reviews      Review[]
+  notifications Notification[]
+  auditLogs    AuditLog[]
+}
+
+model Vendor {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  companyName String
+  rating      Float   @default(0)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deals Deal[]
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  deals Deal[]
+}
+
+model Deal {
+  id            String     @id @default(cuid())
+  title         String
+  description   String
+  originalPrice Float
+  discountPrice Float
+  dealUrl       String
+  expiryDate    DateTime
+  status        DealStatus @default(PENDING_APPROVAL)
+  categoryId    String
+  vendorId      String
+  storeId       String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  category  Category   @relation(fields: [categoryId], references: [id])
+  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  store     Store?     @relation(fields: [storeId], references: [id])
+  bookmarks Bookmark[]
+  reviews   Review[]
+}
+
+model Bookmark {
+  id      String   @id @default(cuid())
+  userId  String
+  dealId  String
+  savedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dealId])
+}
+
+model Review {
+  id      String @id @default(cuid())
+  userId  String
+  dealId  String
+  rating  Int
+  comment String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id      String   @id @default(cuid())
+  userId  String
+  message String
+  type    String
+  isRead  Boolean  @default(false)
+  sentAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  actionType String
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Store {
+  id      String  @id @default(cuid())
+  name    String
+  baseUrl String
+  logoUrl String?
+  apiKey  String?
+
+  deals Deal[]
+}
