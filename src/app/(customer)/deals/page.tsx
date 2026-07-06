@@ -99,6 +99,7 @@ export default function DealsPage() {
                 category={deal.category}
                 vendor={deal.vendor}
                 store={deal.store}
+                imageUrl={deal.imageUrl}
                 expiryDate={deal.expiryDate}
                 bookmarkCount={deal._count.bookmarks}
                 index={i}

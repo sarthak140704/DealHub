@@ -1,11 +1,10 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useTRPC } from '@/app/trpc/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/Toast';
 import { StatusBadge } from '@/components/EmptyState';
-import { use } from 'react';
+import { use, useState } from 'react';
 
 export default function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,6 +31,23 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         queryClient.invalidateQueries({ queryKey: trpc.bookmarks.isBookmarked.queryOptions({ dealId: id }).queryKey });
         addToast('Bookmark removed', 'info');
       },
+    })
+  );
+
+  const trackClick = useMutation(trpc.deals.trackClick.mutationOptions());
+
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+
+  const createReview = useMutation(
+    trpc.reviews.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: trpc.deals.getById.queryOptions({ id }).queryKey });
+        setReviewComment('');
+        setReviewRating(5);
+        addToast('Review posted!', 'success');
+      },
+      onError: (err) => addToast(err.message, 'error'),
     })
   );
 
@@ -80,7 +96,11 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <h1 className="text-3xl font-bold mb-2">{deal.title}</h1>
         <p className="text-muted-foreground text-sm">
-          Posted by {deal.vendor.user.username} • {deal._count.bookmarks} bookmarks • {deal._count.reviews} reviews
+          Posted by {deal.vendor.user.username}
+          {deal.vendor.rating > 0 && (
+            <span className="text-yellow-500"> • ★ {deal.vendor.rating.toFixed(1)}</span>
+          )}
+          {' • '}{deal._count.bookmarks} bookmarks • {deal._count.reviews} reviews
         </p>
       </div>
 
@@ -89,8 +109,13 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left: Deal visual */}
           <div className="lg:w-1/3">
-            <div className="relative aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-              <span className="text-7xl">🏷️</span>
+            <div className="relative aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
+              {deal.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={deal.imageUrl} alt={deal.title} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-7xl">🏷️</span>
+              )}
               <div className="absolute top-3 right-3 gradient-bg text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
                 {discount}% OFF
               </div>
@@ -153,6 +178,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 href={deal.dealUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackClick.mutate({ id })}
                 data-testid="visit-website-button"
                 className="px-5 py-2.5 rounded-xl gradient-bg text-white font-medium text-sm shadow-lg hover:opacity-90 transition-opacity"
               >
@@ -166,6 +192,53 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
       {/* Reviews */}
       <div className="bg-card border border-border rounded-2xl p-6">
         <h2 className="text-xl font-semibold mb-4">Reviews ({deal.reviews.length})</h2>
+
+        {/* Add review */}
+        <form
+          data-testid="review-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            createReview.mutate({ dealId: id, rating: reviewRating, comment: reviewComment });
+          }}
+          className="mb-6 p-4 rounded-xl bg-muted/50 space-y-3"
+        >
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium">Your rating</label>
+            <div className="flex" role="radiogroup" aria-label="Rating">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  key={star}
+                  data-testid={`review-star-${star}`}
+                  onClick={() => setReviewRating(star)}
+                  aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                  className="text-xl text-yellow-500 leading-none"
+                >
+                  {star <= reviewRating ? '★' : '☆'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <textarea
+            data-testid="review-comment-input"
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)}
+            placeholder="Share your experience with this deal..."
+            required
+            minLength={3}
+            rows={3}
+            className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+          <button
+            type="submit"
+            data-testid="submit-review-button"
+            disabled={createReview.isPending}
+            className="px-5 py-2.5 rounded-xl gradient-bg text-white font-medium text-sm shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {createReview.isPending ? 'Posting…' : 'Post Review'}
+          </button>
+        </form>
+
         {deal.reviews.length === 0 ? (
           <p className="text-muted-foreground text-sm">No reviews yet. Be the first to review this deal!</p>
         ) : (

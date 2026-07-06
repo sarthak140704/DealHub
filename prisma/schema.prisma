@@ -40,6 +40,7 @@ model User {
   reviews      Review[]
   notifications Notification[]
   auditLogs    AuditLog[]
+  dealClicks   DealClick[]
 }
 
 model Vendor {
@@ -67,6 +68,7 @@ model Deal {
   originalPrice Float
   discountPrice Float
   dealUrl       String
+  imageUrl      String?
   expiryDate    DateTime
   status        DealStatus @default(PENDING_APPROVAL)
   categoryId    String
@@ -75,11 +77,30 @@ model Deal {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  category  Category   @relation(fields: [categoryId], references: [id])
-  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  store     Store?     @relation(fields: [storeId], references: [id])
+  category  Category    @relation(fields: [categoryId], references: [id])
+  vendor    Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  store     Store?      @relation(fields: [storeId], references: [id])
   bookmarks Bookmark[]
   reviews   Review[]
+  clicks    DealClick[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([vendorId])
+  @@index([createdAt])
+}
+
+model DealClick {
+  id        String   @id @default(cuid())
+  dealId    String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  deal Deal  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([dealId])
+  @@index([createdAt])
 }
 
 model Bookmark {
@@ -103,6 +124,9 @@ model Review {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dealId])
+  @@index([dealId])
 }
 
 model Notification {
@@ -114,6 +138,8 @@ model Notification {
   sentAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model AuditLog {
@@ -123,6 +149,8 @@ model AuditLog {
   timestamp  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Store {

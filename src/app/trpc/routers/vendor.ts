@@ -35,7 +35,7 @@ export const vendorRouter = createTRPCRouter({
       where: { vendorId: vendor.id, status: { not: 'DELETED' } },
       include: {
         category: true,
-        store: true,
+        store: { select: { id: true, name: true, baseUrl: true, logoUrl: true } },
         _count: { select: { bookmarks: true, reviews: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -54,15 +54,14 @@ export const vendorRouter = createTRPCRouter({
     const deals = await db.deal.findMany({
       where: { vendorId: vendor.id, status: { not: 'DELETED' } },
       include: {
-        _count: { select: { bookmarks: true, reviews: true } },
+        _count: { select: { bookmarks: true, reviews: true, clicks: true } },
       },
     });
 
-    // Mock click data since we don't have real analytics yet
     return deals.map((deal) => ({
       id: deal.id,
       title: deal.title,
-      clicks: Math.floor(Math.random() * 500) + 50,
+      clicks: deal._count.clicks,
       saves: deal._count.bookmarks,
       reviews: deal._count.reviews,
       status: deal.status,

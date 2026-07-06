@@ -10,7 +10,7 @@ export const authRouter = createTRPCRouter({
       z.object({
         username: z.string().min(3).max(30),
         email: z.string().email(),
-        password: z.string().min(6),
+        password: z.string().min(8),
         role: z.enum(['CUSTOMER', 'VENDOR']),
         companyName: z.string().optional(),
       })
@@ -33,29 +33,33 @@ export const authRouter = createTRPCRouter({
 
       const passwordHash = await hashPassword(input.password);
 
-      const user = await db.user.create({
-        data: {
-          username: input.username,
-          email: input.email,
-          passwordHash,
-          role: input.role,
-        },
-      });
-
-      if (input.role === 'VENDOR') {
-        await db.vendor.create({
+      const user = await db.$transaction(async (tx) => {
+        const created = await tx.user.create({
           data: {
-            userId: user.id,
-            companyName: input.companyName || input.username,
+            username: input.username,
+            email: input.email,
+            passwordHash,
+            role: input.role,
           },
         });
-      }
+
+        if (input.role === 'VENDOR') {
+          await tx.vendor.create({
+            data: {
+              userId: created.id,
+              companyName: input.companyName || input.username,
+            },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: { userId: created.id, actionType: 'USER_REGISTERED' },
+        });
+
+        return created;
+      });
 
       await createSession(user.id, user.role);
-
-      await db.auditLog.create({
-        data: { userId: user.id, actionType: 'USER_REGISTERED' },
-      });
 
       return { id: user.id, username: user.username, email: user.email, role: user.role };
     }),

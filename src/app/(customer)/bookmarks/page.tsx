@@ -53,6 +53,7 @@ export default function BookmarksPage() {
                 category={bookmark.deal.category}
                 vendor={bookmark.deal.vendor}
                 store={bookmark.deal.store}
+                imageUrl={bookmark.deal.imageUrl}
                 expiryDate={bookmark.deal.expiryDate}
                 bookmarkCount={bookmark.deal._count.bookmarks}
                 index={i}

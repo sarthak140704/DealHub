@@ -32,11 +32,34 @@ export default function AdminDealsPage() {
     })
   );
 
+  const expireDeals = useMutation(
+    trpc.deals.expireDeals.mutationOptions({
+      onSuccess: (res) => {
+        queryClient.invalidateQueries({ queryKey: trpc.deals.getAllAdmin.queryOptions().queryKey });
+        addToast(
+          res.expired > 0 ? `${res.expired} deal(s) marked as expired` : 'No past-due deals to expire',
+          'success'
+        );
+      },
+      onError: (err) => addToast(err.message, 'error'),
+    })
+  );
+
   return (
     <div className="max-w-6xl mx-auto" data-testid="admin-deals-page">
-      <div className="mb-8 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-2">Manage Deals</h1>
-        <p className="text-muted-foreground">Review, approve, or reject submitted deals</p>
+      <div className="mb-8 flex items-start justify-between gap-4 animate-fade-in">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Manage Deals</h1>
+          <p className="text-muted-foreground">Review, approve, or reject submitted deals</p>
+        </div>
+        <button
+          data-testid="expire-deals-button"
+          onClick={() => expireDeals.mutate()}
+          disabled={expireDeals.isPending}
+          className="shrink-0 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+        >
+          {expireDeals.isPending ? 'Expiring…' : 'Expire past-due deals'}
+        </button>
       </div>
 
       {isLoading ? (

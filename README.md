@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DealHub
 
-## Getting Started
+A full-stack deals marketplace where **vendors** submit deals, **admins** approve/moderate them, and **customers** browse, bookmark, and review. Built with the Next.js App Router, end-to-end type-safe tRPC, and Prisma.
 
-First, run the development server:
+## Tech stack
+
+- **Next.js 16** (App Router, Turbopack) + **React 19**
+- **tRPC 11** with **TanStack Query** for type-safe client/server data flow
+- **Prisma 7** ORM on **PostgreSQL** (via `@prisma/adapter-pg`)
+- **JWT** session auth (`jose`) with `httpOnly` cookies + edge middleware route protection
+- **Tailwind CSS 4**
+- **Bun** as the package manager / runtime
+
+## Roles
+
+| Role | Can |
+|------|-----|
+| `CUSTOMER` | Browse & search active deals, bookmark, review, manage notifications/profile |
+| `VENDOR` | Submit deals (go to `PENDING_APPROVAL`), edit/delete own deals, view analytics |
+| `ADMIN` | Approve/reject deals, manage users & categories, view audit logs |
+
+Route protection is enforced in `src/middleware.ts` (redirects) and again per-procedure in `src/app/trpc/init.ts` (`protectedProcedure` / `vendorProcedure` / `adminProcedure`).
+
+## Getting started
+
+### 1. Prerequisites
+
+- [Bun](https://bun.sh) (1.3+)
+- A PostgreSQL database
+
+### 2. Environment
+
+Copy the example env file and fill in your values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
+| `JWT_SECRET` | Secret used to sign session JWTs. **Required in production** — the app throws on startup if unset when `NODE_ENV=production`. |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Install, migrate, seed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun install                 # installs deps and generates the Prisma client (postinstall)
+bunx prisma migrate deploy  # apply migrations (or: bunx prisma migrate dev)
+bun prisma/seed.ts          # seed demo data (optional)
+```
 
-## Learn More
+### 4. Run
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run dev     # development
+# or
+bun run build && bun run start   # production build + serve
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Demo credentials
 
-## Deploy on Vercel
+After seeding, all accounts share the password `password123`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Role | Email |
+|------|-------|
+| Admin | `admin@dealhub.com` |
+| Vendor | `vendor1@dealhub.com`, `vendor2@dealhub.com` |
+| Customer | `john@example.com`, `jane@example.com` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start the dev server |
+| `bun run build` | Production build |
+| `bun run start` | Serve the production build |
+| `bun run lint` | Run ESLint |
+| `bunx tsc --noEmit` | Type-check |
+
+## Project structure
+
+```
+src/
+  app/
+    (admin)/ (customer)/ (vendor)/   # role-scoped route groups
+    api/trpc/[trpc]/route.ts         # tRPC HTTP handler
+    trpc/                            # tRPC init, client/server helpers, routers
+  components/                        # shared UI (DealCard, Sidebar, ThemeProvider, ...)
+  lib/                               # auth (JWT/bcrypt) and Prisma client
+  middleware.ts                      # auth + role-based route protection
+prisma/
+  schema.prisma                      # data model
+  migrations/                        # SQL migrations
+  seed.ts                            # demo data
+```

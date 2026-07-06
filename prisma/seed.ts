@@ -6,10 +6,13 @@ import bcrypt from 'bcryptjs';
 const adapter = new PrismaPg(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
+const daysFromNow = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000);
+
 async function main() {
   console.log('🌱 Seeding DealHub database...');
 
   // Clear existing data
+  await prisma.dealClick.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.review.deleteMany();
@@ -119,7 +122,8 @@ async function main() {
         originalPrice: 114900,
         discountPrice: 99900,
         dealUrl: 'https://amazon.com/macbook-air-m3',
-        expiryDate: new Date('2026-05-01'),
+        imageUrl: 'https://picsum.photos/seed/macbook/600/600',
+        expiryDate: daysFromNow(30),
         status: DealStatus.ACTIVE,
         categoryId: electronics.id,
         vendorId: vendor1.id,
@@ -133,7 +137,8 @@ async function main() {
         originalPrice: 29990,
         discountPrice: 17990,
         dealUrl: 'https://amazon.com/sony-xm5',
-        expiryDate: new Date('2026-04-20'),
+        imageUrl: 'https://picsum.photos/seed/sonyxm5/600/600',
+        expiryDate: daysFromNow(20),
         status: DealStatus.ACTIVE,
         categoryId: electronics.id,
         vendorId: vendor1.id,
@@ -147,7 +152,8 @@ async function main() {
         originalPrice: 134900,
         discountPrice: 119900,
         dealUrl: 'https://flipkart.com/iphone-16-pro',
-        expiryDate: new Date('2026-04-15'),
+        imageUrl: 'https://picsum.photos/seed/iphone16/600/600',
+        expiryDate: daysFromNow(15),
         status: DealStatus.ACTIVE,
         categoryId: electronics.id,
         vendorId: vendor1.id,
@@ -161,7 +167,8 @@ async function main() {
         originalPrice: 4499,
         discountPrice: 2999,
         dealUrl: 'https://myntra.com/levis-501',
-        expiryDate: new Date('2026-04-30'),
+        imageUrl: 'https://picsum.photos/seed/levis501/600/600',
+        expiryDate: daysFromNow(25),
         status: DealStatus.ACTIVE,
         categoryId: fashion.id,
         vendorId: vendor2.id,
@@ -175,7 +182,8 @@ async function main() {
         originalPrice: 12995,
         discountPrice: 8447,
         dealUrl: 'https://myntra.com/nike-airmax90',
-        expiryDate: new Date('2026-05-10'),
+        imageUrl: 'https://picsum.photos/seed/airmax90/600/600',
+        expiryDate: daysFromNow(40),
         status: DealStatus.ACTIVE,
         categoryId: fashion.id,
         vendorId: vendor2.id,
@@ -189,7 +197,7 @@ async function main() {
         originalPrice: 1200,
         discountPrice: 480,
         dealUrl: 'https://zomato.com/gold',
-        expiryDate: new Date('2026-04-25'),
+        expiryDate: daysFromNow(18),
         status: DealStatus.ACTIVE,
         categoryId: food.id,
         vendorId: vendor1.id,
@@ -203,7 +211,7 @@ async function main() {
         originalPrice: 35000,
         discountPrice: 30000,
         dealUrl: 'https://makemytrip.com',
-        expiryDate: new Date('2026-06-01'),
+        expiryDate: daysFromNow(60),
         status: DealStatus.ACTIVE,
         categoryId: travel.id,
         vendorId: vendor1.id,
@@ -217,7 +225,8 @@ async function main() {
         originalPrice: 25000,
         discountPrice: 12500,
         dealUrl: 'https://ikea.com/sale',
-        expiryDate: new Date('2026-05-15'),
+        imageUrl: 'https://picsum.photos/seed/ikeasale/600/600',
+        expiryDate: daysFromNow(35),
         status: DealStatus.ACTIVE,
         categoryId: homeGarden.id,
         vendorId: vendor2.id,
@@ -231,7 +240,7 @@ async function main() {
         originalPrice: 3500,
         discountPrice: 2100,
         dealUrl: 'https://nykaa.com/beauty-box',
-        expiryDate: new Date('2026-04-28'),
+        expiryDate: daysFromNow(28),
         status: DealStatus.ACTIVE,
         categoryId: health.id,
         vendorId: vendor2.id,
@@ -245,7 +254,7 @@ async function main() {
         originalPrice: 134999,
         discountPrice: 124999,
         dealUrl: 'https://flipkart.com/galaxy-s25-ultra',
-        expiryDate: new Date('2026-04-10'),
+        expiryDate: daysFromNow(45),
         status: DealStatus.PENDING_APPROVAL,
         categoryId: electronics.id,
         vendorId: vendor1.id,
@@ -259,7 +268,7 @@ async function main() {
         originalPrice: 16999,
         discountPrice: 12749,
         dealUrl: 'https://myntra.com/adidas-ultraboost',
-        expiryDate: new Date('2026-05-20'),
+        expiryDate: daysFromNow(50),
         status: DealStatus.PENDING_APPROVAL,
         categoryId: fashion.id,
         vendorId: vendor2.id,
@@ -273,7 +282,7 @@ async function main() {
         originalPrice: 62900,
         discountPrice: 50900,
         dealUrl: 'https://amazon.com/dyson-v15',
-        expiryDate: new Date('2026-03-01'),
+        expiryDate: daysFromNow(-30),
         status: DealStatus.EXPIRED,
         categoryId: homeGarden.id,
         vendorId: vendor1.id,
@@ -302,6 +311,28 @@ async function main() {
       { userId: customer2.id, dealId: deals[7].id, rating: 3, comment: 'Good prices but limited stock.' },
     ],
   });
+
+  // --- Deal Clicks (powers real vendor analytics) ---
+  const clickCounts = [120, 85, 200, 60, 150, 40, 30, 75, 55];
+  const clickData = clickCounts.flatMap((count, i) =>
+    Array.from({ length: count }, () => ({
+      dealId: deals[i].id,
+      userId: i % 2 === 0 ? customer1.id : customer2.id,
+    }))
+  );
+  await prisma.dealClick.createMany({ data: clickData });
+
+  // --- Recompute vendor ratings from seeded reviews ---
+  for (const vendor of [vendor1, vendor2]) {
+    const agg = await prisma.review.aggregate({
+      where: { deal: { vendorId: vendor.id } },
+      _avg: { rating: true },
+    });
+    await prisma.vendor.update({
+      where: { id: vendor.id },
+      data: { rating: agg._avg.rating ?? 0 },
+    });
+  }
 
   // --- Notifications ---
   await prisma.notification.createMany({
@@ -334,6 +365,7 @@ async function main() {
   console.log(`   Deals: 12`);
   console.log(`   Bookmarks: 5`);
   console.log(`   Reviews: 4`);
+  console.log(`   Deal Clicks: ${clickData.length}`);
   console.log(`   Notifications: 6`);
   console.log(`   Audit Logs: 6`);
   console.log('');

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface DealCardProps {
   id: string;
@@ -10,6 +11,7 @@ interface DealCardProps {
   category: { name: string; slug: string };
   vendor?: { user: { username: string } } | null;
   store?: { name: string } | null;
+  imageUrl?: string | null;
   expiryDate: string | Date;
   bookmarkCount?: number;
   index?: number;
@@ -21,15 +23,16 @@ export function DealCard({
   originalPrice,
   discountPrice,
   category,
-  vendor,
   store,
+  imageUrl,
   expiryDate,
   bookmarkCount = 0,
   index = 0,
 }: DealCardProps) {
+  const [now] = useState(() => Date.now());
   const discount = Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
   const expiry = new Date(expiryDate);
-  const isExpiringSoon = expiry.getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000;
+  const isExpiringSoon = expiry.getTime() - now < 3 * 24 * 60 * 60 * 1000;
 
   return (
     <Link href={`/deals/${id}`} data-testid="deal-card">
@@ -42,8 +45,13 @@ export function DealCard({
           <div className="absolute top-4 right-4 gradient-bg text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
             {discount}% OFF
           </div>
-          <div className="h-32 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-            <span className="text-5xl opacity-60">🏷️</span>
+          <div className="h-32 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-5xl opacity-60">🏷️</span>
+            )}
           </div>
         </div>
 

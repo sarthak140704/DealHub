@@ -19,6 +19,7 @@ export default function NewDealPage() {
     originalPrice: '',
     discountPrice: '',
     dealUrl: '',
+    imageUrl: '',
     expiryDate: '',
     categoryId: '',
   });
@@ -41,6 +42,7 @@ export default function NewDealPage() {
       originalPrice: parseFloat(form.originalPrice),
       discountPrice: parseFloat(form.discountPrice),
       dealUrl: form.dealUrl,
+      imageUrl: form.imageUrl || undefined,
       expiryDate: form.expiryDate,
       categoryId: form.categoryId,
     });
@@ -124,6 +126,18 @@ export default function NewDealPage() {
             onChange={(e) => update('dealUrl', e.target.value)}
             placeholder="https://example.com/deal"
             required
+            className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Image URL <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <input
+            type="url"
+            data-testid="deal-image-input"
+            value={form.imageUrl}
+            onChange={(e) => update('imageUrl', e.target.value)}
+            placeholder="https://example.com/product.jpg"
             className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>

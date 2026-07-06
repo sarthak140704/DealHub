@@ -51,7 +51,7 @@ export const bookmarksRouter = createTRPCRouter({
           include: {
             category: true,
             vendor: { include: { user: { select: { username: true } } } },
-            store: true,
+            store: { select: { id: true, name: true, baseUrl: true, logoUrl: true } },
             _count: { select: { bookmarks: true } },
           },
         },

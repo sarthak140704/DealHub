@@ -15,6 +15,9 @@ export const trpc = createTRPCOptionsProxy({
 
 export const caller = appRouter.createCaller(createTRPCContext);
 
+// Signature and cast follow the official tRPC + TanStack Query server-component
+// prefetch helper, where the query-options generic is intentionally loosely typed.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
 ) {
@@ -25,6 +28,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
     void queryClient.prefetchQuery(queryOptions);
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function HydrateClient(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
