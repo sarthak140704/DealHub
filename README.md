@@ -21,6 +21,17 @@ A full-stack deals marketplace where **vendors** submit deals, **admins** approv
 
 Route protection is enforced in `src/middleware.ts` (redirects) and again per-procedure in `src/app/trpc/init.ts` (`protectedProcedure` / `vendorProcedure` / `adminProcedure`).
 
+## Features
+
+- **Deal marketplace** — browse, full-text search, category & price filters, and sorting (newest, popular, biggest discount, price).
+- **Bookmarks & reviews** — customers can save deals and post star-rated reviews (one per deal).
+- **Vendor ratings** — a vendor's rating is the average of all reviews across their deals, recomputed on each new review and shown on deal pages.
+- **Click-through analytics** — every "Visit Website" click is recorded (`DealClick`), powering real per-deal click/save/review counts on the vendor analytics dashboard.
+- **Deal images** — vendors can attach an image URL, shown on cards and detail pages (emoji fallback otherwise).
+- **Auto-expiry** — past-due deals are hidden from public listings; admins can bulk-mark them `EXPIRED`.
+- **Moderation workflow** — vendor submissions land in `PENDING_APPROVAL`; admins approve/reject, with all actions written to an audit log.
+- **Security** — `httpOnly` JWT cookies, bcrypt password hashing, role-based route + procedure guards, and hardening HTTP headers.
+
 ## Getting started
 
 ### 1. Prerequisites
