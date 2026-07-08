@@ -19,7 +19,8 @@ const customerNav: NavItem[] = [
   { label: 'Dashboard', href: '/home', testId: 'nav-dashboard', icon: '🏠' },
   { label: 'Browse Deals', href: '/deals', testId: 'nav-deals', icon: '🏷️' },
   { label: 'Bookmarks', href: '/bookmarks', testId: 'nav-bookmarks', icon: '🔖' },
-  { label: 'Notifications', href: '/notifications', testId: 'nav-notifications', icon: '🔔' },
+  { label: 'Alerts', href: '/alerts', testId: 'nav-alerts', icon: '🔔' },
+  { label: 'Notifications', href: '/notifications', testId: 'nav-notifications', icon: '📬' },
   { label: 'Profile', href: '/profile', testId: 'nav-profile', icon: '👤' },
 ];
 

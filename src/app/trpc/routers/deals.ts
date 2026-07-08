@@ -7,6 +7,45 @@ import { Prisma } from '@generated/prisma';
 // Public-safe store fields — never expose Store.apiKey to clients.
 const publicStoreSelect = { id: true, name: true, baseUrl: true, logoUrl: true } as const;
 
+// When a deal becomes ACTIVE, notify users whose alerts match it (by category
+// or by keyword found in the title/description). One notification per user.
+async function notifyMatchingAlerts(deal: {
+  id: string;
+  title: string;
+  description: string;
+  categoryId: string;
+}) {
+  const alerts = await db.dealAlert.findMany({
+    where: {
+      OR: [{ categoryId: deal.categoryId }, { keyword: { not: null } }],
+    },
+    select: { userId: true, categoryId: true, keyword: true },
+  });
+
+  if (alerts.length === 0) return;
+
+  const dealText = `${deal.title} ${deal.description}`.toLowerCase();
+  const userIds = new Set<string>();
+
+  for (const alert of alerts) {
+    if (alert.categoryId && alert.categoryId === deal.categoryId) {
+      userIds.add(alert.userId);
+    } else if (alert.keyword && dealText.includes(alert.keyword.toLowerCase())) {
+      userIds.add(alert.userId);
+    }
+  }
+
+  if (userIds.size === 0) return;
+
+  await db.notification.createMany({
+    data: [...userIds].map((userId) => ({
+      userId,
+      message: `New deal matching your alert: "${deal.title}"`,
+      type: 'DEAL_ALERT',
+    })),
+  });
+}
+
 export const dealsRouter = createTRPCRouter({
   getAll: baseProcedure
     .input(
@@ -214,6 +253,8 @@ export const dealsRouter = createTRPCRouter({
       await db.auditLog.create({
         data: { userId: ctx.session.userId, actionType: 'DEAL_APPROVED' },
       });
+
+      await notifyMatchingAlerts(deal);
 
       return deal;
     }),

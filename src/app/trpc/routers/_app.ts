@@ -8,6 +8,7 @@ import { notificationsRouter } from './notifications';
 import { reviewsRouter } from './reviews';
 import { auditLogsRouter } from './auditLogs';
 import { vendorRouter } from './vendor';
+import { alertsRouter } from './alerts';
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   reviews: reviewsRouter,
   auditLogs: auditLogsRouter,
   vendor: vendorRouter,
+  alerts: alertsRouter,
 });
 
 // export type definition of API

@@ -41,6 +41,7 @@ model User {
   notifications Notification[]
   auditLogs    AuditLog[]
   dealClicks   DealClick[]
+  dealAlerts   DealAlert[]
 }
 
 model Vendor {
@@ -58,7 +59,8 @@ model Category {
   name String @unique
   slug String @unique
 
-  deals Deal[]
+  deals      Deal[]
+  dealAlerts DealAlert[]
 }
 
 model Deal {
@@ -101,6 +103,20 @@ model DealClick {
 
   @@index([dealId])
   @@index([createdAt])
+}
+
+model DealAlert {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String?
+  keyword    String?
+  createdAt  DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
 }
 
 model Bookmark {

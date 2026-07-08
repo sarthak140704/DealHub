@@ -13,6 +13,7 @@ async function main() {
 
   // Clear existing data
   await prisma.dealClick.deleteMany();
+  await prisma.dealAlert.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.review.deleteMany();
@@ -334,6 +335,15 @@ async function main() {
     });
   }
 
+  // --- Deal Alerts ---
+  await prisma.dealAlert.createMany({
+    data: [
+      { userId: customer1.id, categoryId: electronics.id },
+      { userId: customer1.id, keyword: 'macbook' },
+      { userId: customer2.id, keyword: 'nike' },
+    ],
+  });
+
   // --- Notifications ---
   await prisma.notification.createMany({
     data: [
@@ -366,6 +376,7 @@ async function main() {
   console.log(`   Bookmarks: 5`);
   console.log(`   Reviews: 4`);
   console.log(`   Deal Clicks: ${clickData.length}`);
+  console.log(`   Deal Alerts: 3`);
   console.log(`   Notifications: 6`);
   console.log(`   Audit Logs: 6`);
   console.log('');
